@@ -90,7 +90,6 @@ async def async_setup_entry(
 
 
 class WeatherBase(WeatherEntity):
-    """Base representation of a BOM weather entity."""
 
     def __init__(self, hass_data, location_name) -> None:
         """Initialize the sensor."""
@@ -181,7 +180,6 @@ class WeatherBase(WeatherEntity):
 
 
 class WeatherDaily(WeatherBase):
-    """Representation of a BOM weather entity."""
 
     def __init__(self, hass_data, location_name):
         """Initialize the sensor."""
@@ -217,7 +215,6 @@ class WeatherDaily(WeatherBase):
 
 
 class WeatherHourly(WeatherBase):
-    """Representation of a BOM hourly weather entity."""
 
     def __init__(self, hass_data, location_name):
         """Initialize the sensor."""

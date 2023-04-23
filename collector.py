@@ -15,6 +15,8 @@ from .const import (
     CURRENT_WEATHER_SHORT_DESCRIPTION,
     CURRENT_WEATHER_TEMP, 
     CURRENT_WEATHER_TEXT,
+    SUNRISE,
+    SUNSET,
     HOURLY_FORCAST,
     HOURLY_FORCAST_HOUR,
     HOURLY_FORCAST_TEMP,
@@ -77,7 +79,7 @@ from .const import (
 )
 from .helpers import (
     TIMEZONE,
-    parseDate,
+    parseDate, parseAstronomicalTime, getNow, getToday,
 )
 
 from bs4 import BeautifulSoup
@@ -85,7 +87,6 @@ from bs4 import BeautifulSoup
 _LOGGER = logging.getLogger(__name__)
 
 class Collector:
-    """Collector for PyBoM."""
 
     def __init__(self, city):
         """Init collector."""
@@ -109,12 +110,12 @@ class Collector:
                     ATTR_API_SHORT_TEXT : soup.find('div', attrs={'class': CURRENT_WEATHER_SHORT_DESCRIPTION}).text.replace("\n","").replace("\r","").strip()
                 }
                 hfc=soup.find('div', attrs={'class': CURRENT_WEATHER_TEXT})
-                idx1=hfc.text.lower().index("napkelte ")
+                idx1=hfc.text.lower().index(SUNRISE+" ")
                 idx2=hfc.text.index("\n",idx1)
-                loc_data["current"].update({ATTR_API_ASTRONOMICAL_SUNRISE_TIME : hfc.text[idx1+9:idx2]})
-                idx1=hfc.text.lower().index("napnyugta ")
+                loc_data["current"].update({ATTR_API_ASTRONOMICAL_SUNRISE_TIME : parseAstronomicalTime(hfc.text[idx1+9:idx2])})
+                idx1=hfc.text.lower().index(SUNSET+" ")
                 idx2=hfc.text.index("\n",idx1)
-                loc_data["current"].update({ATTR_API_ASTRONOMICAL_SUNSET_TIME : hfc.text[idx1+10:idx2]})
+                loc_data["current"].update({ATTR_API_ASTRONOMICAL_SUNSET_TIME : parseAstronomicalTime(hfc.text[idx1+10:idx2])})
                 loc_data.update({"timezone": TIMEZONE})
                  
         """Collecting hourly informations"""
@@ -125,13 +126,13 @@ class Collector:
                 hfc=soup.find_all('div', attrs={'class': HOURLY_FORCAST})
                 hours = len(hfc)
                 
-                dtime=datetime.datetime.today()
+                dtime=getToday()
                 
                 for hour in range(0, hours):
                     soup2 = BeautifulSoup(str(hfc[hour].contents), features="html.parser")
                     if hour == 0:                    
                         hs=soup2.find('div', attrs={'class': HOURLY_FORCAST_HOUR}).text.replace("\n","").replace("\r","").strip()
-                        dtime = dtime.replace(hour=int(hs[0:hs.index(":")]),minute=0,second=0)                        
+                        dtime = dtime + datetime.timedelta(hours=int(hs[0:hs.index(":")]))
                         
                     tmp_dict = dict()
                     tmp_dict = {
@@ -167,7 +168,11 @@ class Collector:
 
                     t=soup2.find('img', attrs={'class': HOURLY_FORCAST_ICON})
                     if t is not None:
-                        tmp_dict.update({ATTR_API_ICON_DESCRIPTOR : t.attrs["src"].replace("\n","").replace("\r","").strip()})
+                        icon_d=t.attrs["src"].replace("\n","").replace("\r","").strip()
+                        try:
+                            tmp_dict.update({ATTR_API_ICON_DESCRIPTOR : icon_d })
+                        except:
+                            _LOGGER.exception("unsupported icon desciptor: %s", icon_d)                            
                     else:    
                         tmp_dict.update({"icon" : ""})
 
@@ -250,8 +255,11 @@ class Collector:
                         tmp_dict.update({ATTR_API_SHORT_TEXT : (xx.strip())})
                         
                         icon_d=soup3.find("div",attrs={'class': DAILY_FORCAST_DESCRIPTION_LINE}).text.strip()
-                        tmp_dict.update({ATTR_API_ICON_DESCRIPTOR : icon_d})
-                        tmp_dict.update({ATTR_API_MDI_ICON : MAP_MDI_ICON[icon_d]})
+                        try:
+                            tmp_dict.update({ATTR_API_ICON_DESCRIPTOR : icon_d})
+                            tmp_dict.update({ATTR_API_MDI_ICON : MAP_MDI_ICON[icon_d]})
+                        except:
+                            _LOGGER.exception("unsupported mdi desciptor: %s", icon_d)                            
                     else:    
                         tmp_dict.update({ATTR_API_SHORT_TEXT : ""})
 

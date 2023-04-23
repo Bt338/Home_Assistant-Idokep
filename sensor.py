@@ -145,7 +145,6 @@ async def async_setup_entry(
 
 
 class SensorBase(CoordinatorEntity[DataCoordinator], SensorEntity):
-    """Base representation of a BOM Sensor."""
 
     def __init__(self, hass_data, location_name, sensor_name, description: SensorEntityDescription,) -> None:
         """Initialize the sensor."""
@@ -186,7 +185,6 @@ class SensorBase(CoordinatorEntity[DataCoordinator], SensorEntity):
 
 
 class ObservationSensor(SensorBase):
-    """Representation of a BOM Observation Sensor."""
 
     def __init__(self, hass_data, location_name, sensor_name, description: SensorEntityDescription,):
         """Initialize the sensor."""
@@ -238,7 +236,6 @@ class ObservationSensor(SensorBase):
 
 
 class ForecastSensor(SensorBase):
-    """Representation of a BOM Forecast Sensor."""
 
     def __init__(self, hass_data, location_name, day, sensor_name, description: SensorEntityDescription,):
         """Initialize the sensor."""
@@ -331,7 +328,6 @@ class ForecastSensor(SensorBase):
 
 
 class WarningsSensor(SensorBase):
-    """Representation of a BOM Warnings Sensor."""
 
     def __init__(self, hass_data, location_name, sensor_name, description: SensorEntityDescription,):
         """Initialize the sensor."""
@@ -368,7 +364,6 @@ class WarningsSensor(SensorBase):
 
 
 class NowLaterSensor(SensorBase):
-    """Representation of a BOM Forecast Sensor."""
 
     def __init__(self, hass_data, location_name, sensor_name, description: SensorEntityDescription,):
         """Initialize the sensor."""
