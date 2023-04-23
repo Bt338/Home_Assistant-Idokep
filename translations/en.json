@@ -1,0 +1,42 @@
+{
+    "config": {
+        "abort": {
+            "already_configured": "[%key:common::config_flow::abort::already_configured_device%]"
+        },
+        "error": {
+            "bad_location": "Unsupported city",
+            "cannot_connect": "Cannot connect",
+            "unknown": "Unknown error"
+        },
+        "step": {
+            "user": {
+                "title": "Set up Idokep",
+                "description": "City to show detailed weather informations",
+                "data": {
+                    "city": "City",
+					"forcast_days": "Length of forcast (in days)"
+                }
+            }
+        }
+    },
+    "options": {
+        "abort": {
+            "already_configured": "[%key:common::config_flow::abort::already_configured_device%]"
+        },
+        "error": {
+            "bad_location": "Unsupported city",
+            "cannot_connect": "Cannot connect",
+            "unknown": "Unknown error"
+        },
+        "step": {
+            "init": {
+                "title": "Idokep options",
+                "description": "City to show detailed weather informations",
+                "data": {
+                    "city": "City",
+					"forcast_days": "Length of forcast (in days)"
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,13 @@
+{
+  "domain": "idokep",
+  "name": "Időkép",
+  "integration_type": "service",
+  "config_flow": true,
+  "requirements": ["beautifulsoup4", "lxml"],
+  "ssdp": [],
+  "zeroconf": [],
+  "homekit": {},
+  "dependencies": [],
+  "version": "1.0.0",
+  "codeowners": ["@bt338"]
+}

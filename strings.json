@@ -1,0 +1,32 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "[%key:common::config_flow::title%]",
+        "description": "[%key:common::config_flow::description%]",
+        "data": {
+		  "city": "[%key:common::config_flow::data::city%]"
+		  "forcast_days": "[%key:common::config_flow::data::forcast_days%]"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "[%key:common::config_flow::title%]",
+        "description": "[%key:common::config_flow::description%]",
+        "data": {
+		  "city": "[%key:common::config_flow::data::city%]"
+		  "forcast_days": "[%key:common::config_flow::data::forcast_days%]"
+        }
+	}
+  },
+  "error": {
+    "bad_location": "[%key:common::config_flow::error::bad_location%]",
+    "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
+    "unknown": "[%key:common::config_flow::error::unknown%]"
+  },
+  "abort": {
+    "already_configured": "[%key:common::config_flow::abort::already_configured_device%]"
+  }
+}
