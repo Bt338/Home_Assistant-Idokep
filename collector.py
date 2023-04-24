@@ -104,8 +104,9 @@ class Collector:
             async with session.get(URL_BASE + URL_NORMAL + self.city) as resp:
                 soup = BeautifulSoup(await resp.text(), features="html.parser")
                 loc_data = dict()
+
                 loc_data["current"] = {
-                    ATTR_API_TEMP : soup.find('div', attrs={'class': CURRENT_WEATHER_TEMP}).text.replace("\n","").replace("\r","").replace("°C","").strip(),
+                    ATTR_API_TEMP : float(soup.find('div', attrs={'class': CURRENT_WEATHER_TEMP}).text.replace("\n","").replace("\r","").replace("˚C","").strip()),
                     ATTR_API_EXTENDED_TEXT : soup.find('div', attrs={'class': CURRENT_WEATHER_DESCRIPTION}).text.replace("\n","").replace("\r","").strip(),
                     ATTR_API_SHORT_TEXT : soup.find('div', attrs={'class': CURRENT_WEATHER_SHORT_DESCRIPTION}).text.replace("\n","").replace("\r","").strip()
                 }
@@ -260,8 +261,10 @@ class Collector:
                             tmp_dict.update({ATTR_API_MDI_ICON : MAP_MDI_ICON[icon_d]})
                         except:
                             _LOGGER.exception("unsupported mdi desciptor: %s", icon_d)                            
+                            tmp_dict.update({ATTR_API_MDI_ICON : "mdi:help"})
                     else:    
                         tmp_dict.update({ATTR_API_SHORT_TEXT : ""})
+                        tmp_dict.update({ATTR_API_MDI_ICON : "mdi:help"})
 
                     df_data[day] = tmp_dict
 

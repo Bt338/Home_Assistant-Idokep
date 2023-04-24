@@ -123,14 +123,13 @@ class WeatherBase(WeatherEntity):
     @property
     def native_temperature(self):
         """Return the platform temperature."""
-        return self.collector.locations_data["current"]["temp"]
+        return self.collector.locations_data["current"][ATTR_API_TEMP]
         return 0
 
     @property
     def icon(self):
         """Return the icon."""
-        #return self.collector.daily_forecasts_data[0]["mdi_icon"]
-        return "mdi:weather-night"
+        return self.collector.daily_forecasts_data[0][ATTR_API_MDI_ICON]        
 
     @property
     def native_temperature_unit(self):
@@ -168,12 +167,7 @@ class WeatherBase(WeatherEntity):
     @property
     def condition(self):
         """Return the current condition."""
-        """
-        return MAP_CONDITION[
-            self.collector.daily_forecasts_data[0]["icon_descriptor"]
-        ]
-        """
-        return ""
+        return self.collector.daily_forecasts_data[0][ATTR_API_ICON_DESCRIPTOR]
 
     async def async_update(self):
         await self.coordinator.async_update()
@@ -205,7 +199,7 @@ class WeatherDaily(WeatherBase):
                 forecast = {
                     "datetime": self.collector.daily_forecasts_data[day]["date"],
                     "native_temperature": self.collector.daily_forecasts_data[day][ATTR_API_TEMP_MAX],
-                    #"condition": MAP_CONDITION[self.collector.daily_forecasts_data[day][ATTR_API_ICON_DESCRIPTOR]],
+                    "condition": MAP_CONDITION[self.collector.daily_forecasts_data[day][ATTR_API_ICON_DESCRIPTOR]],
                     "templow": self.collector.daily_forecasts_data[day][ATTR_API_TEMP_MIN],
                     "native_precipitation": self.collector.daily_forecasts_data[day][ATTR_API_RAIN_AMOUNT_MIN],
                     #"precipitation_probability": self.collector.daily_forecasts_data[day][ATTR_API_RAIN_CHANCE],
