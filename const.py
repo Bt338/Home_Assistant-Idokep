@@ -76,6 +76,7 @@ MAP_MDI_ICON = {
     "gyenge eső": "mdi:weather-pouring",
     "eső": "mdi:weather-rainy",
     "zápor": "mdi:weather-partly-rainy",
+    "zivatar": "mdi:weather-lightning-rainy",
 #s
     "tiszta": "mdi:weather-night",
     "felhős": "mdi:weather-cloudy",
