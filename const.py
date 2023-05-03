@@ -37,6 +37,18 @@ COORDINATOR: Final = "coordinator"
 DOMAIN: Final = "idokep"
 
 MAP_CONDITION: Final = {
+    "derült": "sunny",
+    "gyengén felhős": "partlycloudy",
+    "közepesen felhős": "partlycloudy",
+    "erősen felhős": "weather-cloudy",
+    "borult": "cloudy",
+    "szitálás": "rainy",
+    "gyenge eső": "rainy",
+    "eső": "rainy",
+    "zápor": "rainy",
+    "zivatar": "lightning-rainy",
+    "eső viharos széllel": "lightning-rainy",
+#s
     "clear": "clear-night",
     "cloudy": "cloudy",
     "cyclone": "exceptional",
@@ -77,6 +89,7 @@ MAP_MDI_ICON = {
     "eső": "mdi:weather-rainy",
     "zápor": "mdi:weather-partly-rainy",
     "zivatar": "mdi:weather-lightning-rainy",
+    "eső viharos széllel": "mdi:weather-lightning-rainy",
 #s
     "tiszta": "mdi:weather-night",
     "felhős": "mdi:weather-cloudy",
