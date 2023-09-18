@@ -167,7 +167,8 @@ class WeatherBase(WeatherEntity):
     @property
     def condition(self):
         """Return the current condition."""
-        return self.collector.daily_forecasts_data[0][ATTR_API_ICON_DESCRIPTOR]
+        return self.collector.locations_data["current"][ATTR_API_SHORT_TEXT] + " - " + self.collector.locations_data["current"][ATTR_API_EXTENDED_TEXT]
+        #return self.collector.daily_forecasts_data[0][ATTR_API_ICON_DESCRIPTOR]
 
     async def async_update(self):
         await self.coordinator.async_update()
@@ -182,7 +183,7 @@ class WeatherDaily(WeatherBase):
     @property
     def name(self):
         """Return the name."""
-        return self.location_name + " Daily"
+        return self.location_name + "Daily"
 
     @property
     def unique_id(self):
@@ -206,6 +207,11 @@ class WeatherDaily(WeatherBase):
                 }
                 forecasts.append(forecast)
         return forecasts
+        
+    @property
+    def condition(self):
+        """Return the condition"""
+        return MAP_CONDITION[self.collector.daily_forecasts_data[0][ATTR_API_ICON_DESCRIPTOR]]
 
 
 class WeatherHourly(WeatherBase):
@@ -217,7 +223,7 @@ class WeatherHourly(WeatherBase):
     @property
     def name(self):
         """Return the name."""
-        return self.location_name + " - Hourly"
+        return self.location_name + "Hourly"
 
     @property
     def unique_id(self):
@@ -249,3 +255,10 @@ class WeatherHourly(WeatherBase):
                 }
                 forecasts.append(forecast)
         return forecasts
+
+    @property
+    def condition(self):
+        """Return the condition"""
+        return MAP_CONDITION[self.collector.daily_forecasts_data[0][ATTR_API_ICON_DESCRIPTOR]]
+
+

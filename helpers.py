@@ -4,7 +4,7 @@ import datetime as dt
 TIMEZONE='Europe/Budapest'
 
 def parseDate(dateStr) -> dt.datetime:
-    month=['január', 'február', 'március', 'április', 'május', 'június', 'július', 'augusztus', 'szeptember', 'november', 'december' ]
+    month=['január', 'február', 'március', 'április', 'május', 'június', 'július', 'augusztus', 'szeptember', 'október', 'november', 'december' ]
     y=dateStr.lower().split(" ")[0].replace(".","").replace("\n","").replace("\r","").replace(" ","")
     m=month.index(dateStr.lower().split(" ")[1].replace(".","").replace("\n","").replace("\r","").replace(" ","").lower())+1
     d=dateStr.lower().split(" ")[2].replace(".","").replace("\n","").replace("\r","").replace(" ","")
