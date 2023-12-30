@@ -202,3 +202,4 @@ class DataCoordinator(DataUpdateCoordinator):
                 device_registry.async_update_device(
                     device_entry.id, remove_config_entry_id=self.config_entry.entry_id
                 )
+

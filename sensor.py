@@ -44,6 +44,7 @@ from .const import (
     ATTR_API_NON_TEMP_NOW,
     ATTR_API_NOW_LATER_LABEL,
     ATTR_API_NOW_TEMP_LATER,
+    ATTR_API_EXTENDED_TEXT,
     CONF_CITY,
     CONF_FORCAST_DAYS,
 )
@@ -224,7 +225,9 @@ class ObservationSensor(SensorBase):
         """Return the state of the sensor."""         
         if self.sensor_name in self.collector.locations_data["current"]:
             if self.collector.locations_data["current"][self.sensor_name] is not None:
-                self.current_state = self.collector.locations_data["current"][self.sensor_name]
+                txt=self.collector.locations_data["current"][self.sensor_name]
+                if self.sensor_name==ATTR_API_EXTENDED_TEXT: txt=txt[:250]
+                self.current_state = txt
             else:
                 self.current_state = "unavailable"            
         return self.current_state

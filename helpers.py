@@ -26,3 +26,9 @@ def getToday() -> dt.datetime:
     ts=ts.replace(hour=0,minute=0,second=0,microsecond=0)
     return ts.astimezone(pytz.UTC);
        
+def convert_int(s):
+    try:
+        i = int(s)
+    except ValueError:
+        i = 0
+    return i
