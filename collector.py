@@ -17,6 +17,7 @@ from .const import (
     CURRENT_WEATHER_TEXT,
     SUNRISE,
     SUNSET,
+    FORCAST_EXTENDED_DESCRIPTION,
     HOURLY_FORCAST,
     HOURLY_FORCAST_HOUR,
     HOURLY_FORCAST_TEMP,
@@ -80,6 +81,7 @@ from .const import (
 from .helpers import (
     TIMEZONE,
     parseDate, parseAstronomicalTime, getNow, getToday,
+    convert_int,
 )
 
 from bs4 import BeautifulSoup
@@ -107,8 +109,7 @@ class Collector:
 
                 loc_data["current"] = {
                     ATTR_API_TEMP : float(soup.find('div', attrs={'class': CURRENT_WEATHER_TEMP}).text.replace("\n","").replace("\r","").replace("˚C","").strip()),
-                    ATTR_API_EXTENDED_TEXT : soup.find('div', attrs={'class': CURRENT_WEATHER_DESCRIPTION}).text.replace("\n","").replace("\r","").strip(),
-                    ATTR_API_SHORT_TEXT : soup.find('div', attrs={'class': CURRENT_WEATHER_SHORT_DESCRIPTION}).text.replace("\n","").replace("\r","").strip()
+                    ATTR_API_SHORT_TEXT : soup.find('div', attrs={'class': CURRENT_WEATHER_SHORT_DESCRIPTION}).text.replace("\n","").replace("\r","").strip() + " - " + soup.find('div', attrs={'class': CURRENT_WEATHER_DESCRIPTION}).text.replace("\n","").replace("\r","").strip()
                 }
                 hfc=soup.find('div', attrs={'class': CURRENT_WEATHER_TEXT})
                 idx1=hfc.text.lower().index(SUNRISE+" ")
@@ -129,6 +130,8 @@ class Collector:
                 
                 dtime=getToday()
                 
+                loc_data["current"].update({ATTR_API_EXTENDED_TEXT: soup.find('div', attrs={'class': FORCAST_EXTENDED_DESCRIPTION}).text})
+                
                 for hour in range(0, hours):
                     soup2 = BeautifulSoup(str(hfc[hour].contents), features="html.parser")
                     if hour == 0:                    
@@ -141,8 +144,8 @@ class Collector:
                         ATTR_API_TEMP_MAX : soup2.find('div', attrs={'class': HOURLY_FORCAST_TEMP}).text.replace("\n","").replace("\r","").strip()
                     }
                     t=soup2.find('div', attrs={'class': HOURLY_FORCAST_RAIN_CHANCE})
-                    if t is not None:
-                        rc=int(t.text.replace("\n","").replace("\r","").replace("%","").strip())
+                    if (t is not None) and (t != ''):
+                        rc=convert_int(t.text.replace("\n","").replace("\r","").replace("%","").strip())
                         tmp_dict.update({ATTR_API_RAIN_CHANCE : rc})
                         if hour>24 and rain_chance_max<rc:
                             rain_chance_max=rc
@@ -150,25 +153,27 @@ class Collector:
                         tmp_dict.update({ATTR_API_RAIN_CHANCE : 0})
 
                     t=soup2.find('div', attrs={'class': HOURLY_FORCAST_RAIN_LEVEL})
-                    if t is not None:
-                        tmp_dict.update({ATTR_API_RAIN_AMOUNT_MIN : int("".join(t.contents).replace("\n","").replace("\r","").replace("<--","").replace("-->","").replace("mm","").strip())})
+
+                    if (t is not None) and (t != ""):
+                        _LOGGER.debug("ATTR_API_RAIN_AMOUNT_MIN %s", t)
+                        tmp_dict.update({ATTR_API_RAIN_AMOUNT_MIN : convert_int("".join(t.contents).replace("\n","").replace("\r","").replace("<--","").replace("-->","").replace("mm","").strip())})
                     else:    
                         tmp_dict.update({ATTR_API_RAIN_AMOUNT_MIN : 0})
 
                     t=soup2.find('div', attrs={'class': HOURLY_FORCAST_WIND})
-                    if t is not None:
+                    if (t is not None) and (t != ''):
                         tmp_dict.update({"wind_description" : t.find("a").attrs["data-bs-content"].replace("\n","").replace("\r","").strip()})
                         tmp_dict.update({"wind_strenght" : t.find("div").attrs["class"][2].replace("\n","").replace("\r","").strip()})
-                        tmp_dict.update({ATTR_API_WIND_DIRECTION : int(t.find("div").attrs["class"][3].replace("\n","").replace("\r","").replace("r","").strip())})
+                        tmp_dict.update({ATTR_API_WIND_DIRECTION : convert_int(t.find("div").attrs["class"][3].replace("\n","").replace("\r","").replace("r","").strip())})
 
                     t=soup2.find('div', attrs={'class': HOURLY_FORCAST_ICON_CONTAINER})
-                    if t is not None:
+                    if (t is not None) and (t != ''):
                         tmp_dict.update({ATTR_API_SHORT_TEXT : t.find("a").attrs["data-bs-content"].replace("\n","").replace("\r","").strip()})
                     else:    
                         tmp_dict.update({ATTR_API_SHORT_TEXT : ""})
 
                     t=soup2.find('img', attrs={'class': HOURLY_FORCAST_ICON})
-                    if t is not None:
+                    if (t is not None) and (t != ''):
                         icon_d=t.attrs["src"].replace("\n","").replace("\r","").strip()
                         try:
                             tmp_dict.update({ATTR_API_ICON_DESCRIPTOR : icon_d })
@@ -178,7 +183,7 @@ class Collector:
                         tmp_dict.update({"icon" : ""})
 
                     t=soup2.find('div', attrs={'class': HOURLY_FORCAST_ALERT})
-                    if t is not None:
+                    if (t is not None) and (t != ''):
                         tmp_dict.update({"alert" : t.text.replace("\n","").replace("\r","").strip()})
                     else:    
                         tmp_dict.update({"alert" : ""})
@@ -204,7 +209,7 @@ class Collector:
                     
 #                   t=soup2.find('div', attrs={'class': DAILY_FORCAST_RAIN})
 #                   if t is not None:
-#                       tmp=int(t.text.replace("\n","").replace("\r","").replace("%","").replace(".","1").strip())
+#                       tmp=convert_int(t.text.replace("\n","").replace("\r","").replace("%","").replace(".","1").strip())
 #                       tmp_dict.update({ATTR_API_RAIN_CHANCE : tmp})
 #                       if day == 0:
 #                           loc_data["current"].update({ATTR_API_RAIN_CHANCE: 0})
@@ -214,8 +219,8 @@ class Collector:
 #                           loc_data["current"].update({ATTR_API_RAIN_CHANCE: 0})
                         
                     t=soup2.find('div', attrs={'class': DAILY_FORCAST_RAIN_LEVEL})
-                    if t is not None:
-                        tmp=int("".join(t.contents).replace("\n","").replace("\r","").replace("<--","").replace("-->","").replace("mm","").strip())
+                    if (t is not None) and (t != ''):
+                        tmp=convert_int("".join(t.contents).replace("\n","").replace("\r","").replace("<--","").replace("-->","").replace("mm","").strip())
                         tmp_dict.update({ATTR_API_RAIN_AMOUNT_MIN : tmp})
                         if day == 0:
                             loc_data["current"].update({ATTR_API_RAIN_AMOUNT_MIN: tmp})
@@ -225,8 +230,8 @@ class Collector:
                             loc_data["current"].update({ATTR_API_RAIN_AMOUNT_MIN: 0})
 
                     t=soup2.find('div', attrs={'class': DAILY_FORCAST_TEMP_MAX})
-                    if t is not None:
-                        tmp=int(t.find("a").text.replace("\n","").replace("\r","").replace("C","").replace("°","").strip())
+                    if (t is not None) and (t != ''):
+                        tmp=convert_int(t.find("a").text.replace("\n","").replace("\r","").replace("C","").replace("°","").strip())
                         tmp_dict.update({ATTR_API_TEMP_MAX : tmp})
                         if day == 0:
                             loc_data["current"].update({ATTR_API_MAX_TEMP: tmp})
@@ -236,8 +241,8 @@ class Collector:
                             loc_data["current"].update({ATTR_API_MAX_TEMP: 100})
 
                     t=soup2.find('div', attrs={'class': DAILY_FORCAST_TEMP_MIN})
-                    if t is not None:
-                        tmp=int(t.find("a").text.replace("\n","").replace("\r","").replace("C","").replace("°","").strip())
+                    if (t is not None) and (t != ''):
+                        tmp=convert_int(t.find("a").text.replace("\n","").replace("\r","").replace("C","").replace("°","").strip())
                         tmp_dict.update({ATTR_API_TEMP_MIN : tmp})
                         if day == 0:
                             loc_data["current"].update({ATTR_API_MIN_TEMP: tmp})

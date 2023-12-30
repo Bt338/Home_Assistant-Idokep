@@ -7,12 +7,11 @@ from homeassistant.components.sensor import (
 )
 
 from homeassistant.const import (
-    LENGTH_MILLIMETERS,
+    UnitOfSpeed, 
+    UnitOfTemperature, 
+    UnitOfPrecipitationDepth, 
+    UnitOfPressure,
     PERCENTAGE,
-    TEMP_CELSIUS,
-    SPEED_KILOMETERS_PER_HOUR,
-    SPEED_KNOTS,
-    DEGREE,
 )
 
 ATTRIBUTION: Final = "Data provided by Idokep.hu"
@@ -48,6 +47,9 @@ MAP_CONDITION: Final = {
     "zápor": "rainy",
     "zivatar": "lightning-rainy",
     "eső viharos széllel": "lightning-rainy",
+    "hózápor": "snowy",
+    "hószállingózás": "snowy",
+    "havas eső": "snowy"
 #s
     "clear": "clear-night",
     "cloudy": "cloudy",
@@ -90,6 +92,10 @@ MAP_MDI_ICON = {
     "zápor": "mdi:weather-partly-rainy",
     "zivatar": "mdi:weather-lightning-rainy",
     "eső viharos széllel": "mdi:weather-lightning-rainy",
+    "pára": "mdi:weather-fog",
+    "hózápor": "weather-snowy-heavy",
+    "hószállingózás": "weather-snowy",
+    "havas eső": "weather-snowy-rainy"
 #s
     "tiszta": "mdi:weather-night",
     "felhős": "mdi:weather-cloudy",
@@ -131,6 +137,7 @@ CURRENT_WEATHER_TEMP = "ik current-temperature"
 CURRENT_WEATHER_TEXT = "shortCurrentWeatherText" 
 SUNRISE = "napkelte"
 SUNSET = "napnyugta"
+FORCAST_EXTENDED_DESCRIPTION = "hosszutavu-elorejelzes"
 HOURLY_FORCAST = "ik new-hourly-forecast-card"
 HOURLY_FORCAST_HOUR = "ik new-hourly-forecast-hour"
 HOURLY_FORCAST_TEMP = "ik tempValue"
@@ -195,21 +202,21 @@ OBSERVATION_SENSOR_TYPES: tuple[SensorEntityDescription, ...] = (
     SensorEntityDescription(
         key=ATTR_API_TEMP,
         name="Current Temperature",
-        native_unit_of_measurement=TEMP_CELSIUS,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT,
     ),
     SensorEntityDescription(
         key=ATTR_API_MAX_TEMP,
         name="Todays Observed Maximum Temperature",
-        native_unit_of_measurement=TEMP_CELSIUS,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT,
     ),
     SensorEntityDescription(
         key=ATTR_API_MIN_TEMP,
         name="Todays Observed Minimum Temperature",
-        native_unit_of_measurement=TEMP_CELSIUS,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT,
     ),
@@ -234,7 +241,7 @@ OBSERVATION_SENSOR_TYPES: tuple[SensorEntityDescription, ...] = (
     SensorEntityDescription(
         key=ATTR_API_RAIN_AMOUNT_MIN,
         name="Precipitation amount",
-        native_unit_of_measurement=LENGTH_MILLIMETERS,
+        native_unit_of_measurement=UnitOfPrecipitationDepth.MILLIMETERS,
         device_class=SensorDeviceClass.PRECIPITATION,
         state_class=SensorStateClass.TOTAL_INCREASING,
     ),
@@ -255,7 +262,7 @@ OBSERVATION_SENSOR_TYPES: tuple[SensorEntityDescription, ...] = (
 #   SensorEntityDescription(
 #       key=ATTR_API_WIND_SPEED_KILOMETRE,
 #       name="Wind Speed km/h",
-#       native_unit_of_measurement=SPEED_KILOMETERS_PER_HOUR,
+#       native_unit_of_measurement=UnitOfSpeed.KILOMETERS_PER_HOUR,
 #       device_class=SensorDeviceClass.WIND_SPEED,
 #       state_class=SensorStateClass.MEASUREMENT,
 #   ),
@@ -275,7 +282,7 @@ OBSERVATION_SENSOR_TYPES: tuple[SensorEntityDescription, ...] = (
 #   SensorEntityDescription(
 #       key=ATTR_API_GUST_SPEED_KILOMETRE,
 #       name="Gust Speed km/h",
-#       native_unit_of_measurement=SPEED_KILOMETERS_PER_HOUR,
+#       native_unit_of_measurement=UnitOfSpeed.KILOMETERS_PER_HOUR,
 #       device_class=SensorDeviceClass.WIND_SPEED,
 #       state_class=SensorStateClass.MEASUREMENT,
 #   ),
@@ -292,13 +299,13 @@ FORECAST_SENSOR_TYPES: tuple[SensorEntityDescription, ...] = (
     SensorEntityDescription(
         key=ATTR_API_TEMP_MAX,
         name="Forecast Maximum Temperature",
-        native_unit_of_measurement=TEMP_CELSIUS,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         device_class=SensorDeviceClass.TEMPERATURE,
     ),
     SensorEntityDescription(
         key=ATTR_API_TEMP_MIN,
         name="Forecast Minimum Temperature",
-        native_unit_of_measurement=TEMP_CELSIUS,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         device_class=SensorDeviceClass.TEMPERATURE,
     ),
     SensorEntityDescription(
@@ -316,7 +323,7 @@ FORECAST_SENSOR_TYPES: tuple[SensorEntityDescription, ...] = (
     SensorEntityDescription(
         key=ATTR_API_RAIN_AMOUNT_MIN,
         name="Rain Amount Minimum",
-        native_unit_of_measurement=LENGTH_MILLIMETERS,
+        native_unit_of_measurement=UnitOfPrecipitationDepth.MILLIMETERS,
         device_class=SensorDeviceClass.PRECIPITATION,
     ),
 #   SensorEntityDescription(
@@ -371,7 +378,7 @@ FORECAST_SENSOR_TYPES: tuple[SensorEntityDescription, ...] = (
 #   SensorEntityDescription(
 #       key=ATTR_API_NON_TEMP_NOW,
 #       name="Now Temperature",
-#       native_unit_of_measurement=TEMP_CELSIUS,
+#       native_unit_of_measurement=UnitOfTemperature.CELSIUS,
 #       device_class=SensorDeviceClass.TEMPERATURE,
 #   ),
 #   SensorEntityDescription(
@@ -381,7 +388,7 @@ FORECAST_SENSOR_TYPES: tuple[SensorEntityDescription, ...] = (
 #   SensorEntityDescription(
 #       key=ATTR_API_NOW_TEMP_LATER,
 #       name="Later Temperature",
-#       native_unit_of_measurement=TEMP_CELSIUS,
+#       native_unit_of_measurement=UnitOfTemperature.CELSIUS,
 #       device_class=SensorDeviceClass.TEMPERATURE,
 #   ),
 #   SensorEntityDescription(

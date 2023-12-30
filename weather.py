@@ -4,9 +4,34 @@ from __future__ import annotations
 import logging
 from datetime import datetime, tzinfo
 
-from homeassistant.components.weather import WeatherEntity
+from homeassistant.components.weather import (
+    ATTR_CONDITION_CLEAR_NIGHT,
+    ATTR_CONDITION_SUNNY,
+    ATTR_FORECAST_CONDITION,
+    ATTR_FORECAST_HUMIDITY,
+    ATTR_FORECAST_IS_DAYTIME,
+    ATTR_FORECAST_NATIVE_DEW_POINT,
+    ATTR_FORECAST_NATIVE_TEMP,
+    ATTR_FORECAST_NATIVE_WIND_SPEED,
+    ATTR_FORECAST_PRECIPITATION_PROBABILITY,
+    ATTR_FORECAST_TIME,
+    ATTR_FORECAST_WIND_BEARING,
+    ATTR_FORECAST_NATIVE_WIND_SPEED,
+    ATTR_FORECAST_TEMP,
+    ATTR_FORECAST_TEMP_LOW,
+    ATTR_FORECAST_PRECIPITATION,
+    WeatherEntity,
+    Forecast,
+    SingleCoordinatorWeatherEntity,
+    WeatherEntityFeature,
+)
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import SPEED_KILOMETERS_PER_HOUR, TEMP_CELSIUS
+from homeassistant.const import (
+    UnitOfSpeed, 
+    UnitOfTemperature, 
+    UnitOfPrecipitationDepth, 
+    UnitOfPressure,
+)
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
@@ -69,32 +94,28 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
-    hass: HomeAssistant,
-    config_entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
-    """Add sensors for passed config_entry in HA."""
-    hass_data = hass.data[DOMAIN][config_entry.entry_id]
+    """Add a Időkép weather entity from a config_entry."""
 
-    new_entities = []
+    coordinator: DataCoordinator = hass.data[DOMAIN][config_entry.entry_id]
 
     location_name = config_entry.options.get(
         CONF_CITY, config_entry.data.get(CONF_CITY, "")
     )
 
-    new_entities.append(WeatherDaily(hass_data, location_name))
-    new_entities.append(WeatherHourly(hass_data, location_name))
-
-    if new_entities:
-        async_add_entities(new_entities, update_before_add=False)
+    async_add_entities([IdokepWeatherEntity(coordinator, location_name)])
 
 
-class WeatherBase(WeatherEntity):
+class IdokepWeatherEntity(
+    SingleCoordinatorWeatherEntity[DataCoordinator]
+):
 
-    def __init__(self, hass_data, location_name) -> None:
-        """Initialize the sensor."""
-        self.collector: Collector = hass_data[COLLECTOR]
-        self.coordinator: DataCoordinator = hass_data[COORDINATOR]
+    def __init__(self, coordinator: DataCoordinator, location_name) -> None:
+        """Initialize the entity."""
+        super().__init__(coordinator)
+        self.collector: Collector = coordinator[COLLECTOR]
+        self.coordinator: DataCoordinator = coordinator[COORDINATOR]
         self.location_name: str = location_name
         self._attr_device_info = DeviceInfo(
             entry_type=DeviceEntryType.SERVICE,
@@ -103,22 +124,14 @@ class WeatherBase(WeatherEntity):
             model=MODEL_NAME,
             name=self.location_name,
         )
-
-    async def async_added_to_hass(self) -> None:
-        """Set up a listener and load data."""
-        self.async_on_remove(self.coordinator.async_add_listener(self._update_callback))
-        self.async_on_remove(self.coordinator.async_add_listener(self._update_callback))
-        self._update_callback()
-
-    @callback
-    def _update_callback(self) -> None:
-        """Load data from integration."""
-        self.async_write_ha_state()
-
-    @property
-    def should_poll(self) -> bool:
-        """Entities do not individually poll."""
-        return False
+        self._attr_attribution = ATTRIBUTION
+        self._attr_native_temperature_unit = UnitOfTemperature.CELSIUS
+        self._attr_native_precipitation_unit = UnitOfPrecipitationDepth.MILLIMETERS
+        self._attr_native_pressure_unit = UnitOfPressure.KPA
+        self._attr_native_wind_speed_unit = UnitOfSpeed.KILOMETERS_PER_HOUR
+        self._attr_supported_features = (
+            WeatherEntityFeature.FORECAST_DAILY | WeatherEntityFeature.FORECAST_HOURLY
+        )   
 
     @property
     def native_temperature(self):
@@ -134,7 +147,7 @@ class WeatherBase(WeatherEntity):
     @property
     def native_temperature_unit(self):
         """Return the unit of measurement."""
-        return TEMP_CELSIUS
+        return UnitOfTemperature.CELSIUS
 
     @property
     def humidity(self):
@@ -151,7 +164,7 @@ class WeatherBase(WeatherEntity):
     @property
     def native_wind_speed_unit(self):
         """Return the unit of measurement for wind speed."""
-        return SPEED_KILOMETERS_PER_HOUR
+        return UnitOfSpeed.KILOMETERS_PER_HOUR
 
     @property
     def wind_bearing(self):
@@ -167,87 +180,48 @@ class WeatherBase(WeatherEntity):
     @property
     def condition(self):
         """Return the current condition."""
-        return self.collector.locations_data["current"][ATTR_API_SHORT_TEXT] + " - " + self.collector.locations_data["current"][ATTR_API_EXTENDED_TEXT]
+        return (self.collector.locations_data["current"][ATTR_API_SHORT_TEXT] + " - " + self.collector.locations_data["current"][ATTR_API_EXTENDED_TEXT]).truncate(254)
         #return self.collector.daily_forecasts_data[0][ATTR_API_ICON_DESCRIPTOR]
 
-    async def async_update(self):
-        await self.coordinator.async_update()
-
-
-class WeatherDaily(WeatherBase):
-
-    def __init__(self, hass_data, location_name):
-        """Initialize the sensor."""
-        super().__init__(hass_data, location_name)
-
     @property
-    def name(self):
-        """Return the name."""
-        return self.location_name + "Daily"
+    def forecast_daily(self) -> list[Forecast] | None:
+        """Return the forecast array."""
+        forecasts = list[Forecast] = []
 
-    @property
-    def unique_id(self):
-        """Return Unique ID string."""
-        return self.location_name + "_daily"
-
-    @property
-    def forecast(self):
-        """Return the forecast."""
-        forecasts = []
         if self.collector.daily_forecasts_data is not None:
+            _LOGGER.Warning("forecast_daily processing")
             days = len(self.collector.daily_forecasts_data)
             for day in range(0, days):
                 forecast = {
-                    "datetime": self.collector.daily_forecasts_data[day]["date"],
-                    "native_temperature": self.collector.daily_forecasts_data[day][ATTR_API_TEMP_MAX],
-                    "condition": MAP_CONDITION[self.collector.daily_forecasts_data[day][ATTR_API_ICON_DESCRIPTOR]],
-                    "templow": self.collector.daily_forecasts_data[day][ATTR_API_TEMP_MIN],
-                    "native_precipitation": self.collector.daily_forecasts_data[day][ATTR_API_RAIN_AMOUNT_MIN],
+                    ATTR_FORECAST_TIME: self.collector.daily_forecasts_data[day]["date"],
+                    ATTR_FORECAST_TEMP: self.collector.daily_forecasts_data[day][ATTR_API_TEMP_MAX],
+                    ATTR_FORECAST_CONDITION: MAP_CONDITION[self.collector.daily_forecasts_data[day][ATTR_API_ICON_DESCRIPTOR]],
+                    ATTR_FORECAST_TEMP_LOW: self.collector.daily_forecasts_data[day][ATTR_API_TEMP_MIN],
+                    ATTR_FORECAST_PRECIPITATION: self.collector.daily_forecasts_data[day][ATTR_API_RAIN_AMOUNT_MIN],
                     #"precipitation_probability": self.collector.daily_forecasts_data[day][ATTR_API_RAIN_CHANCE],
                 }
                 forecasts.append(forecast)
         return forecasts
-        
+            
     @property
-    def condition(self):
-        """Return the condition"""
-        return MAP_CONDITION[self.collector.daily_forecasts_data[0][ATTR_API_ICON_DESCRIPTOR]]
-
-
-class WeatherHourly(WeatherBase):
-
-    def __init__(self, hass_data, location_name):
-        """Initialize the sensor."""
-        super().__init__(hass_data, location_name)
-
-    @property
-    def name(self):
-        """Return the name."""
-        return self.location_name + "Hourly"
-
-    @property
-    def unique_id(self):
-        """Return Unique ID string."""
-        return self.location_name + "_hourly"
-
-    @property
-    def forecast(self):
-        """Return the forecast."""
-        forecasts = []
+    def forecast_hourly(self) -> list[Forecast] | None:
+        """Return the forecast array."""
+        forecasts = list[Forecast] = []
         if self.collector.hourly_forecasts_data is not None:
+            _LOGGER.Warning("forecast_hourly processing")
             
             hours = len(self.collector.hourly_forecasts_data)
             for hour in range(0, hours):
                 forecast = {
-                    "datetime": self.collector.hourly_forecasts_data[hour]["time"],
-                    "native_temperature": self.collector.hourly_forecasts_data[hour][ATTR_API_TEMP_MAX],
-                    "description": self.collector.hourly_forecasts_data[hour][ATTR_API_SHORT_TEXT],
+                    ATTR_FORECAST_TIME: self.collector.hourly_forecasts_data[hour]["time"],
+                    ATTR_FORECAST_NATIVE_TEMP: self.collector.hourly_forecasts_data[hour][ATTR_API_TEMP_MAX],
+                    "detailed_description": self.collector.hourly_forecasts_data[hour][ATTR_API_SHORT_TEXT],
 
-                    "rain_chance": self.collector.hourly_forecasts_data[hour][ATTR_API_RAIN_CHANCE],
-                    "rain_level": self.collector.hourly_forecasts_data[hour][ATTR_API_RAIN_AMOUNT_MIN],
+                    ATTR_FORECAST_PRECIPITATION_PROBABILITY: self.collector.hourly_forecasts_data[hour][ATTR_API_RAIN_CHANCE],
+                    ATTR_FORECAST_PRECIPITATION: self.collector.hourly_forecasts_data[hour][ATTR_API_RAIN_AMOUNT_MIN],
                     
                     "wind_description": self.collector.hourly_forecasts_data[hour]["wind_description"],
-                    "wind_strenght": self.collector.hourly_forecasts_data[hour]["wind_strenght"],
+                    ATTR_FORECAST_NATIVE_WIND_SPEED: self.collector.hourly_forecasts_data[hour]["wind_strenght"],
                     "wind_direction": self.collector.hourly_forecasts_data[hour][ATTR_API_WIND_DIRECTION],
                     
                     "alert": self.collector.hourly_forecasts_data[hour]["alert"],
@@ -261,4 +235,14 @@ class WeatherHourly(WeatherBase):
         """Return the condition"""
         return MAP_CONDITION[self.collector.daily_forecasts_data[0][ATTR_API_ICON_DESCRIPTOR]]
 
+    @callback
+    def _async_forecast_daily(self) -> list[Forecast] | None:
+        """Return the daily forecast in native units."""
+        _LOGGER.Warning("_async_forecast_daily called")
+        return self.forecast_daily
 
+    @callback
+    def _async_forecast_hourly(self) -> list[Forecast] | None:
+        """Return the hourly forecast in native units."""
+        _LOGGER.Warning("_async_forecast_hourly called")
+        return self.forecast_hourly
